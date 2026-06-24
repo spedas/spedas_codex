@@ -49,3 +49,22 @@ the configured `spedas` server, performs `initialize` + `tools/list`, and verifi
 the core SPEDAS tools without private credentials, interactive UI, data fetches,
 or SPICE kernel downloads. It may need public network access the first time `uvx`
 installs `spedas_mcp`.
+
+## Real Codex CLI smoke
+
+Validate the package structure and the MCP runtime command first:
+
+```bash
+python scripts/validate_plugin.py
+python scripts/smoke_mcp_runtime.py --json
+```
+
+Then ask Codex CLI to try the wrapper without editing files:
+
+```bash
+codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper. Prefer live MCP tools if this Codex build exposes them; otherwise run the safe runtime smoke and summarize evidence. Do not edit files or fetch data."
+```
+
+Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools inside the agent session. In that case, `scripts/smoke_mcp_runtime.py --json` is the authoritative wrapper check: it starts the same `uvx ... spedas-mcp` command from `.mcp.json`, performs MCP initialize + tools/list, and verifies core SPEDAS tools.
+
+The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. This is important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves `spedas_mcp` from GitHub.
