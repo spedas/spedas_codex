@@ -40,6 +40,12 @@ analysis near Jupiter. Do not download large data; produce a plan and provenance
 
 ```bash
 python scripts/validate_plugin.py
+python scripts/smoke_mcp_runtime.py --json
 ```
 
-This validation is network-free and checks wrapper structure plus MCP reference.
+`validate_plugin.py` is network-free and checks wrapper structure plus MCP
+reference. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
+the configured `spedas` server, performs `initialize` + `tools/list`, and verifies
+the core SPEDAS tools without private credentials, interactive UI, data fetches,
+or SPICE kernel downloads. It may need public network access the first time `uvx`
+installs `spedas_mcp`.
