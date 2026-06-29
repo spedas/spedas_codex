@@ -31,7 +31,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `79a4059bc6584e490aadceee327804793357c435` (current Agent Kit `main`) and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
+- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `79a4059bc6584e490aadceee327804793357c435` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
@@ -76,9 +76,114 @@ codex plugin list
 codex plugin add spedas-codex@spedas
 ```
 
+After installing or upgrading the plugin, restart Codex Desktop (or fully restart
+the Codex runtime) and start a new thread before expecting the MCP tools to appear.
+Existing threads can keep the tool surface they loaded before the plugin MCP server
+was enabled. Seeing only the `spedas-codex:spedas-workflow` skill means the skill
+bundle loaded, but it does **not** prove the `spedas` MCP server is attached to the
+current session.
+
+If the skill is available but no callable `mcp__spedas__...` tools appear, confirm
+or add the plugin-scoped MCP block in `~/.codex/config.toml`:
+
+```toml
+[plugins."spedas-codex@spedas"]
+enabled = true
+
+[plugins."spedas-codex@spedas".mcp_servers.spedas]
+enabled = true
+default_tools_approval_mode = "prompt"
+```
+
+Then fully restart Codex and open a new thread. In that new thread, the visible
+MCP tool names should include entries such as `mcp__spedas__spedas_overview`,
+`mcp__spedas__browse_data_sources`, `mcp__spedas__plan_spedas_observation`, and
+`mcp__spedas__fetch_data_product` (verify the name is available; do not call the
+fetch tool in a no-fetch smoke).
+
 The legacy root-level `marketplace.json` is kept only as a lightweight compatibility
 index and also points at `plugins/spedas-codex`; Codex marketplace add uses
 `.agents/plugins/marketplace.json`.
+
+
+## Publishing / installing for Codex
+
+The supported package shape is the repo/team marketplace layout used by this repo:
+
+```text
+.agents/plugins/marketplace.json
+plugins/spedas-codex/
+  .codex-plugin/plugin.json
+  .mcp.json
+  AGENTS.md
+  skills/
+  examples/
+  scripts/
+```
+
+### Local / personal marketplace
+
+For personal testing, keep the same plugin package shape and expose it through a
+local marketplace entry (for example in `~/.agents/plugins/marketplace.json`) that
+points at the `plugins/spedas-codex` package. This repository's
+`.agents/plugins/marketplace.json` is the reference entry to copy/adapt: it names
+the marketplace `spedas`, points `source.path` at `./plugins/spedas-codex`, and
+uses the package-local `.codex-plugin/plugin.json` + `.mcp.json`.
+
+After changing a local marketplace or reinstalling the plugin, remove/re-add the
+plugin if needed, then restart Codex and open a new thread. Do not judge MCP tool
+exposure from an old thread that was already running before the reinstall.
+
+### Repo / team marketplace
+
+For a repo-hosted marketplace, keep `.agents/plugins/marketplace.json` in the repo
+and install the marketplace with one of the forms supported by your Codex build:
+
+```bash
+codex plugin marketplace add owner/repo
+codex plugin marketplace add owner/repo --ref main
+codex plugin marketplace add https://github.com/spedas/spedas_codex.git
+```
+
+Then install the plugin from that marketplace:
+
+```bash
+codex plugin add spedas-codex@<marketplace-name>
+```
+
+For this repository, the expected marketplace/plugin id is:
+
+```bash
+codex plugin marketplace add spedas/spedas_codex --ref main
+codex plugin add spedas-codex@spedas
+```
+
+### Workspace sharing in the Codex app
+
+Codex app sharing is workspace-scoped and is not the same as publishing a public
+or repo/team marketplace. For ad hoc app sharing, use **Plugins -> Created by you -> Share** in the Codex app. Users who receive a shared workspace/plugin should
+still restart Codex or open a new thread before checking the native MCP tool
+surface.
+
+### Fresh-thread verification
+
+Keep `python scripts/smoke_mcp_runtime.py --json` as the lower-level server health
+check. It proves the packaged `.mcp.json` can start the SPEDAS Agent Kit MCP server
+and that the server advertises tools. It does **not** prove that the current Codex
+thread mounted those tools.
+
+In a fresh thread after install/reinstall, verify native Codex MCP callables such
+as:
+
+```text
+mcp__spedas__spedas_overview
+mcp__spedas__browse_data_sources
+mcp__spedas__fetch_data_product
+```
+
+If those names are absent, first confirm the plugin-scoped
+`[plugins."spedas-codex@spedas".mcp_servers.spedas]` block above, then restart
+and open another new thread.
 
 ## Local validation
 
@@ -90,17 +195,20 @@ python plugins/spedas-codex/scripts/smoke_mcp_runtime.py --json
 
 `validate_plugin.py` is network-free and checks the marketplace catalog,
 `plugins/spedas-codex` package layout, root compatibility mirrors, MCP reference,
-pinned `spedas_agent_kit` SHA, and bounded MCP dependency. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
-the configured `spedas` server, performs `initialize` + `tools/list`, and verifies
-the current 13-tool base SPEDAS surface without private credentials, interactive UI, data fetches,
-or SPICE kernel downloads. The direct HAPI/FDSN data-source tools are demoted out
-of this base surface (Agent Kit #87/#145) and only appear with
-`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`; the legacy CDAWeb/PDS compat tools require
-`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`. The smoke does not require either optional tier
-unless its flag is set. It may need public network access the first time `uvx`
-installs `spedas_agent_kit`.
+pinned `spedas_agent_kit` SHA, bounded MCP dependency, and the Codex Desktop
+MCP-tool-exposure troubleshooting snippets. `smoke_mcp_runtime.py` is a real stdio
+MCP runtime smoke: it starts the configured `spedas` server, performs `initialize`
++ `tools/list`, and verifies the current 13-tool base SPEDAS surface without
+private credentials, interactive UI, data fetches, or SPICE kernel downloads. The
+direct HAPI/FDSN data-source tools are demoted out of this base surface (Agent Kit
+#87/#145) and only appear with `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`; the legacy
+CDAWeb/PDS compat tools require `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`. The smoke does
+not require either optional tier unless its flag is set. It may need public network
+access the first time `uvx` installs `spedas_agent_kit`. It verifies the wrapper
+runtime command, not whether Codex Desktop attached those tools to an already-open
+agent session.
 
-## Real Codex CLI smoke
+## Real Codex CLI / Desktop smoke
 
 Validate the package structure and the MCP runtime command first:
 
@@ -115,6 +223,27 @@ Then ask Codex CLI to try the wrapper without editing files:
 codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper. Prefer live MCP tools if this Codex build exposes them; otherwise run the safe runtime smoke and summarize evidence. Do not edit files or fetch data."
 ```
 
-Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools inside the agent session. In that case, `scripts/smoke_mcp_runtime.py --json` is the authoritative wrapper check: it starts the same `uvx ... spedas-agent-kit` command from `.mcp.json`, performs MCP initialize + tools/list, and verifies core SPEDAS tools.
+For Codex Desktop, separate two checks:
 
-The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. This is important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves the pinned `spedas_agent_kit` commit from GitHub. Expected default smoke evidence is `ok: true`, a `tool_count` of at least the 13 base tools (the analysis tier may add more if those extras are present), and an empty `missing_core_tools` list. Setting `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` or `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` additionally requires the corresponding optional tier.
+1. **Wrapper runtime health**: `python scripts/smoke_mcp_runtime.py --json` starts
+the same `uvx ... spedas-agent-kit` command from `.mcp.json`, performs MCP
+`initialize` + `tools/list`, and verifies core SPEDAS tools. This confirms the
+plugin package can start the MCP server.
+2. **Active-session tool exposure**: after enabling the plugin MCP server, restart
+Codex Desktop and start a new thread. The new thread should have callable tools
+named like `mcp__spedas__spedas_overview`, `mcp__spedas__browse_data_sources`,
+`mcp__spedas__plan_spedas_observation`, and `mcp__spedas__fetch_data_product`. If
+those tools are missing but the
+`spedas-codex:spedas-workflow` skill is present, the skill loaded but the MCP
+server did not attach to that session; add the plugin-scoped `mcp_servers.spedas`
+config block above and restart again.
+
+The runtime smoke isolates SPEDAS data caches and falls back to temporary
+`uv`/XDG/tmp caches when the default cache location is not writable. This is
+important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves
+the pinned `spedas_agent_kit` commit from GitHub. Expected default smoke evidence
+is `ok: true`, a `tool_count` of at least the 13 base tools (the analysis tier may
+add more if those extras are present), and an empty `missing_core_tools` list.
+Setting `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` or
+`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` additionally requires the corresponding optional
+tier.

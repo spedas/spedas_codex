@@ -22,6 +22,31 @@ MIRRORED_PACKAGE_GLOBS = [
     "skills/spedas-workflow/reference/*.md",
 ]
 
+DOC_REQUIRED_SNIPPETS = {
+    "README.md": [
+        "## Publishing / installing for Codex",
+        "~/.agents/plugins/marketplace.json",
+        "codex plugin marketplace add spedas/spedas_codex --ref main",
+        "codex plugin add spedas-codex@spedas",
+        '[plugins."spedas-codex@spedas".mcp_servers.spedas]',
+        'default_tools_approval_mode = "prompt"',
+        "mcp__spedas__spedas_overview",
+        "mcp__spedas__browse_data_sources",
+        "mcp__spedas__fetch_data_product",
+        "Plugins -> Created by you -> Share",
+    ],
+    "skills/spedas-workflow/reference/mcp-quickstart.md": [
+        "## Publishing / installing for Codex",
+        "codex plugin marketplace add owner/repo",
+        "codex plugin add spedas-codex@<marketplace-name>",
+        '[plugins."spedas-codex@spedas".mcp_servers.spedas]',
+        'default_tools_approval_mode = "prompt"',
+        "mcp__spedas__spedas_overview",
+        "mcp__spedas__browse_data_sources",
+        "mcp__spedas__fetch_data_product",
+    ],
+}
+
 
 def require(path: str, *, base: Path = ROOT) -> Path:
     p = base / path
@@ -145,6 +170,15 @@ def validate_mirrors() -> None:
             raise SystemExit(f"root {rel} and plugins/spedas-codex/{rel} must stay identical")
 
 
+def validate_docs() -> None:
+    """Keep first-run Codex MCP exposure troubleshooting visible in docs."""
+    for rel, snippets in DOC_REQUIRED_SNIPPETS.items():
+        text = require(rel).read_text(encoding="utf-8")
+        for snippet in snippets:
+            if snippet not in text:
+                raise SystemExit(f"{rel} must document {snippet!r}")
+
+
 def main() -> int:
     require("README.md")
     require("LICENSE")
@@ -154,6 +188,7 @@ def main() -> int:
     validate_mcp(base=PLUGIN_ROOT)
     validate_plugin_package()
     validate_mirrors()
+    validate_docs()
     print("SPEDAS Codex plugin wrapper validation OK")
     return 0
 
