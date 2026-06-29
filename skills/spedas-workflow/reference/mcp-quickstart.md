@@ -32,4 +32,3 @@ Depending on Codex CLI version/config, `.mcp.json` may not automatically expose 
 Ask for planning, not data download:
 
 > Which SPEDAS Agent Kit MCP tools and data sources should I use for an MMS magnetopause interval around 2015-10-16T13:06Z? Do not fetch data yet.
-

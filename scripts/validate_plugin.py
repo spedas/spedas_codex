@@ -16,6 +16,10 @@ MIRRORED_PACKAGE_FILES = [
     "AGENTS.md",
     "skills/spedas-workflow/SKILL.md",
     "examples/prompts.md",
+    "scripts/smoke_mcp_runtime.py",
+]
+MIRRORED_PACKAGE_GLOBS = [
+    "skills/spedas-workflow/reference/*.md",
 ]
 
 
@@ -123,9 +127,18 @@ def validate_plugin_package() -> None:
     require("AGENTS.md", base=PLUGIN_ROOT)
 
 
+def _iter_mirrored_files() -> list[str]:
+    rels = set(MIRRORED_PACKAGE_FILES)
+    for pattern in MIRRORED_PACKAGE_GLOBS:
+        for path in sorted(ROOT.glob(pattern)):
+            if path.is_file():
+                rels.add(path.relative_to(ROOT).as_posix())
+    return sorted(rels)
+
+
 def validate_mirrors() -> None:
     """Root copies are kept for direct-checkout compatibility; keep them in sync."""
-    for rel in MIRRORED_PACKAGE_FILES:
+    for rel in _iter_mirrored_files():
         root_file = require(rel)
         package_file = require(rel, base=PLUGIN_ROOT)
         if root_file.read_bytes() != package_file.read_bytes():
