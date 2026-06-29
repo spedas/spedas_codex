@@ -25,7 +25,80 @@ Then try Codex CLI:
 codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper without editing files. Prefer the MCP if available; otherwise run the safe runtime smoke and summarize evidence."
 ```
 
-Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools in the interactive session. The runtime smoke is the authoritative wrapper check because it starts the same pinned `uvx ... spedas-agent-kit` command from `.mcp.json` and performs MCP initialize + tools/list. Expected current-base evidence: `ok: true`, a `tool_count` of at least the 13 base tools, and no missing core tools. The direct HAPI/FDSN tools are not in this default surface (Agent Kit #87/#145); set `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` to advertise them, and `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` for the legacy CDAWeb/PDS compat tools.
+The runtime smoke is the authoritative wrapper/runtime check because it starts the
+same pinned `uvx ... spedas-agent-kit` command from `.mcp.json` and performs MCP
+initialize + tools/list. Expected current-base evidence: `ok: true`, a
+`tool_count` of at least the 13 base tools, and no missing core tools. The direct
+HAPI/FDSN tools are not in this default surface (Agent Kit #87/#145); set
+`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` to advertise them, and
+`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` for the legacy CDAWeb/PDS compat tools.
+
+## Publishing / installing for Codex
+
+Use the same marketplace package shape as this repo:
+
+```text
+.agents/plugins/marketplace.json
+plugins/spedas-codex/.codex-plugin/plugin.json
+plugins/spedas-codex/.mcp.json
+plugins/spedas-codex/skills/...
+```
+
+For a repo/team marketplace, install the marketplace and then the plugin:
+
+```bash
+codex plugin marketplace add owner/repo
+codex plugin marketplace add owner/repo --ref main
+codex plugin marketplace add https://github.com/spedas/spedas_codex.git
+codex plugin add spedas-codex@<marketplace-name>
+```
+
+For this repository:
+
+```bash
+codex plugin marketplace add spedas/spedas_codex --ref main
+codex plugin add spedas-codex@spedas
+```
+
+For personal testing, copy/adapt this repo's `.agents/plugins/marketplace.json` as
+a local marketplace entry such as `~/.agents/plugins/marketplace.json`, pointing it
+at the local `plugins/spedas-codex` package. Codex app sharing is workspace-scoped
+and separate from marketplace publishing; use **Plugins -> Created by you -> Share** for ad hoc workspace sharing.
+
+## Codex Desktop MCP tool exposure
+
+Codex Desktop can load the bundled `spedas-codex:spedas-workflow` skill without
+attaching the plugin-provided MCP server to the current thread. Treat these as two
+separate checks:
+
+1. `python scripts/smoke_mcp_runtime.py --json` verifies the wrapper can start the
+   `spedas` MCP server and list tools.
+2. A fresh Codex Desktop thread must expose callable tools named like
+   `mcp__spedas__spedas_overview`, `mcp__spedas__browse_data_sources`,
+   `mcp__spedas__plan_spedas_observation`, and `mcp__spedas__fetch_data_product`.
+
+After installing or upgrading `spedas-codex@spedas`, fully restart Codex Desktop
+and start a new thread before expecting the MCP tools. Existing threads can keep a
+stale tool surface.
+
+If only the skill is visible and no `mcp__spedas__...` tools appear, confirm or
+add this plugin-scoped block in `~/.codex/config.toml`, then restart Codex and
+open a new thread:
+
+```toml
+[plugins."spedas-codex@spedas"]
+enabled = true
+
+[plugins."spedas-codex@spedas".mcp_servers.spedas]
+enabled = true
+default_tools_approval_mode = "prompt"
+```
+
+A no-fetch first verification prompt for the new thread:
+
+> Use the SPEDAS MCP tool `spedas_overview` to summarize the available SPEDAS
+> Agent Kit tool surface. Do not fetch data. If no `mcp__spedas__...` tools are
+> attached, say so explicitly and do not fall back to a data download.
 
 ## Safe first question
 
