@@ -1,0 +1,19 @@
+{
+  "mcp_servers": {
+    "spedas": {
+      "command": "uvx",
+      "args": [
+        "--with",
+        "mcp>=1.26.0,<2",
+        "--from",
+        "git+https://github.com/spedas/spedas_agent_kit.git@79a4059bc6584e490aadceee327804793357c435",
+        "spedas-agent-kit"
+      ],
+      "env": {
+        "XHELIO_CDAWEB_CACHE_DIR": "${HOME}/.cache/spedas/cdaweb",
+        "PDSMCP_CACHE_DIR": "${HOME}/.cache/spedas/pds",
+        "XHELIO_SPICE_KERNEL_DIR": "${HOME}/.cache/spedas/spice/kernels"
+      }
+    }
+  }
+}

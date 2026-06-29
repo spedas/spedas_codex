@@ -2,7 +2,7 @@
   "plugins": [
     {
       "name": "spedas-codex",
-      "path": ".",
+      "path": "plugins/spedas-codex",
       "description": "Codex wrapper for the official SPEDAS Agent Kit MCP."
     }
   ]

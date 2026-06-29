@@ -7,12 +7,15 @@ without owning or duplicating the Agent Kit science logic/skills.
 
 ## What this repo provides
 
-- `.codex-plugin/plugin.json` — plugin metadata for Codex-style plugin loaders.
 - `.agents/plugins/marketplace.json` — repo-scoped Codex marketplace catalog for `codex plugin marketplace add spedas/spedas_codex --ref main`.
-- `.mcp.json` — starts the `spedas-agent-kit` MCP server from `spedas/spedas_agent_kit` via `uvx`.
-- `AGENTS.md` — repo-level operating instructions for Codex.
-- `skills/spedas-workflow/SKILL.md` — portable SPEDAS workflow guidance.
-- `examples/prompts.md` — suggested prompts and expected tool flow.
+- `plugins/spedas-codex/` — the conventional marketplace plugin package that Codex should discover/install:
+  - `.codex-plugin/plugin.json` — plugin metadata for Codex-style plugin loaders.
+  - `.mcp.json` — starts the `spedas-agent-kit` MCP server from `spedas/spedas_agent_kit` via `uvx`.
+  - `AGENTS.md` — operating instructions for Codex.
+  - `skills/spedas-workflow/SKILL.md` — portable SPEDAS workflow guidance.
+  - `examples/prompts.md` — suggested prompts and expected tool flow.
+  - `scripts/smoke_mcp_runtime.py` — package-local MCP runtime smoke.
+- Root-level `.codex-plugin/`, `.mcp.json`, `AGENTS.md`, `skills/`, and `examples/` are retained as direct-checkout compatibility mirrors of the package files. `scripts/validate_plugin.py` enforces that these mirrors stay in sync.
 
 ## Relationship to `spedas_agent_kit`
 
@@ -46,20 +49,48 @@ This repository includes the supported repo-scoped Codex marketplace manifest at
 codex plugin marketplace add spedas/spedas_codex --ref main
 ```
 
-The marketplace entry points back to this repository root (`source.path: "./"`),
-where `.codex-plugin/plugin.json`, `.mcp.json`, `AGENTS.md`, and `skills/` live.
+The marketplace entry now uses the conventional marketplace package layout:
+
+```text
+.agents/plugins/marketplace.json
+plugins/spedas-codex/
+  .codex-plugin/plugin.json
+  .mcp.json
+  AGENTS.md
+  skills/
+  examples/
+  scripts/
+```
+
+Specifically, `.agents/plugins/marketplace.json` points the `spedas-codex` plugin
+at `source.path: "./plugins/spedas-codex"` and classifies it as
+`Education & Research`. This avoids relying on marketplace-root (`"./"`) plugin
+discovery, which Codex can accept as a marketplace but fail to expose as an
+installable plugin.
+
+On Codex builds that expose plugin listing/installation commands, the plugin
+should then be visible/installable as:
+
+```bash
+codex plugin list
+codex plugin add spedas-codex@spedas
+```
+
 The legacy root-level `marketplace.json` is kept only as a lightweight compatibility
-index; Codex marketplace add uses `.agents/plugins/marketplace.json`.
+index and also points at `plugins/spedas-codex`; Codex marketplace add uses
+`.agents/plugins/marketplace.json`.
 
 ## Local validation
 
 ```bash
 python scripts/validate_plugin.py
 python scripts/smoke_mcp_runtime.py --json
+python plugins/spedas-codex/scripts/smoke_mcp_runtime.py --json
 ```
 
-`validate_plugin.py` is network-free and checks wrapper structure plus MCP
-reference and enforces the pinned `spedas_agent_kit` SHA plus bounded MCP dependency. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
+`validate_plugin.py` is network-free and checks the marketplace catalog,
+`plugins/spedas-codex` package layout, root compatibility mirrors, MCP reference,
+pinned `spedas_agent_kit` SHA, and bounded MCP dependency. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
 the configured `spedas` server, performs `initialize` + `tools/list`, and verifies
 the current 13-tool base SPEDAS surface without private credentials, interactive UI, data fetches,
 or SPICE kernel downloads. The direct HAPI/FDSN data-source tools are demoted out
