@@ -26,6 +26,39 @@ def load_json(path: str):
         raise SystemExit(f"invalid JSON in {path}: {exc}") from exc
 
 
+
+def validate_marketplace():
+    data = load_json('.agents/plugins/marketplace.json')
+    if data.get('name') != 'spedas':
+        raise SystemExit('marketplace name must be spedas')
+    plugins = data.get('plugins')
+    if not isinstance(plugins, list) or len(plugins) != 1:
+        raise SystemExit('marketplace must define exactly one plugin entry')
+    plugin = plugins[0]
+    if plugin.get('name') != 'spedas-codex':
+        raise SystemExit('marketplace plugin name must be spedas-codex')
+    source = plugin.get('source')
+    if not isinstance(source, dict):
+        raise SystemExit('marketplace plugin must define a source object')
+    if source.get('source') != 'local':
+        raise SystemExit('marketplace plugin source.source must be local')
+    if source.get('path') != './':
+        raise SystemExit('marketplace plugin source.path must be ./ for this repo-root plugin')
+    if not (ROOT / '.codex-plugin/plugin.json').exists():
+        raise SystemExit('marketplace source.path ./ must resolve to repo root with .codex-plugin/plugin.json')
+    policy = plugin.get('policy')
+    if not isinstance(policy, dict):
+        raise SystemExit('marketplace plugin must define policy')
+    if policy.get('installation') != 'AVAILABLE':
+        raise SystemExit('marketplace policy.installation must be AVAILABLE')
+    if policy.get('authentication') != 'ON_INSTALL':
+        raise SystemExit('marketplace policy.authentication must be ON_INSTALL')
+    if plugin.get('category') != 'Science':
+        raise SystemExit('marketplace category must be Science')
+    interface = plugin.get('interface')
+    if not isinstance(interface, dict) or interface.get('displayName') != 'SPEDAS Codex':
+        raise SystemExit('marketplace interface.displayName must be SPEDAS Codex')
+
 def validate_mcp():
     data = load_json('.mcp.json')
     servers = data.get('mcpServers') or data.get('mcp_servers')
@@ -55,6 +88,7 @@ def main() -> int:
     require('LICENSE')
     require('skills/spedas-workflow/SKILL.md')
     validate_mcp()
+    validate_marketplace()
     # Repo-specific plugin manifest checks.
     claude = ROOT / '.claude-plugin/plugin.json'
     codex = ROOT / '.codex-plugin/plugin.json'

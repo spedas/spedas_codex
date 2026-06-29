@@ -8,6 +8,7 @@ without owning or duplicating the Agent Kit science logic/skills.
 ## What this repo provides
 
 - `.codex-plugin/plugin.json` — plugin metadata for Codex-style plugin loaders.
+- `.agents/plugins/marketplace.json` — repo-scoped Codex marketplace catalog for `codex plugin marketplace add spedas/spedas_codex --ref main`.
 - `.mcp.json` — starts the `spedas-agent-kit` MCP server from `spedas/spedas_agent_kit` via `uvx`.
 - `AGENTS.md` — repo-level operating instructions for Codex.
 - `skills/spedas-workflow/SKILL.md` — portable SPEDAS workflow guidance.
@@ -35,6 +36,20 @@ backend packages unless you are maintaining the MCP itself.
 Use the SPEDAS Agent Kit MCP to compare CDAWeb, PDS, and SPICE for a Juno magnetic-field
 analysis near Jupiter. Do not download large data; produce a plan and provenance.
 ```
+
+## Codex marketplace install
+
+This repository includes the supported repo-scoped Codex marketplace manifest at
+`.agents/plugins/marketplace.json`. Add it to Codex with:
+
+```bash
+codex plugin marketplace add spedas/spedas_codex --ref main
+```
+
+The marketplace entry points back to this repository root (`source.path: "./"`),
+where `.codex-plugin/plugin.json`, `.mcp.json`, `AGENTS.md`, and `skills/` live.
+The legacy root-level `marketplace.json` is kept only as a lightweight compatibility
+index; Codex marketplace add uses `.agents/plugins/marketplace.json`.
 
 ## Local validation
 

@@ -1,0 +1,20 @@
+{
+  "name": "spedas",
+  "plugins": [
+    {
+      "name": "spedas-codex",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Science",
+      "interface": {
+        "displayName": "SPEDAS Codex"
+      }
+    }
+  ]
+}
