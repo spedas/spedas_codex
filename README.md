@@ -27,7 +27,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_mcp` from GitHub.
+- Network access the first time `uvx` installs `spedas_mcp` from GitHub. This wrapper pins `spedas_mcp` to `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
@@ -44,9 +44,9 @@ python scripts/smoke_mcp_runtime.py --json
 ```
 
 `validate_plugin.py` is network-free and checks wrapper structure plus MCP
-reference. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
+reference and enforces the pinned `spedas_mcp` SHA plus bounded MCP dependency. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
 the configured `spedas` server, performs `initialize` + `tools/list`, and verifies
-the core SPEDAS tools without private credentials, interactive UI, data fetches,
+the current 17-tool base SPEDAS surface without private credentials, interactive UI, data fetches,
 or SPICE kernel downloads. It may need public network access the first time `uvx`
 installs `spedas_mcp`.
 
@@ -67,4 +67,4 @@ codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper
 
 Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools inside the agent session. In that case, `scripts/smoke_mcp_runtime.py --json` is the authoritative wrapper check: it starts the same `uvx ... spedas-mcp` command from `.mcp.json`, performs MCP initialize + tools/list, and verifies core SPEDAS tools.
 
-The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. This is important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves `spedas_mcp` from GitHub.
+The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. This is important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves the pinned `spedas_mcp` commit from GitHub. Expected smoke evidence is `ok: true`, `tool_count: 17`, and an empty `missing_core_tools` list.

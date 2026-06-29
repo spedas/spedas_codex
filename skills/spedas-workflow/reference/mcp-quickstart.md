@@ -25,7 +25,7 @@ Then try Codex CLI:
 codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper without editing files. Prefer the MCP if available; otherwise run the safe runtime smoke and summarize evidence."
 ```
 
-Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools in the interactive session. The runtime smoke is the authoritative wrapper check because it starts the same `uvx ... spedas-mcp` command from `.mcp.json` and performs MCP initialize + tools/list.
+Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools in the interactive session. The runtime smoke is the authoritative wrapper check because it starts the same pinned `uvx ... spedas-mcp` command from `.mcp.json` and performs MCP initialize + tools/list. Expected current-base evidence: `ok: true`, `tool_count: 17`, and no missing core tools.
 
 ## Safe first question
 

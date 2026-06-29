@@ -13,7 +13,7 @@ Think in four layers:
 
 1. **Science question** — event, mission, interval, coordinate system, expected signal, and success criteria.
 2. **Workflow layer** — SPEDAS MCP planning/comparison/bundle tools or PySPEDAS recipes.
-3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model.
+3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model. SPICE geometry uses `get_ephemeris`, `compute_distance`, and `transform_coordinates`, not `fetch_data_product`.
 4. **Artifacts and provenance** — outputs are paths, manifests, hashes, plots, tables, and notes; avoid dumping large arrays/CDF/tplot objects into chat.
 
 ## Default workflow
@@ -34,7 +34,8 @@ Think in four layers:
 - Discovery and mental model: `spedas_overview`.
 - Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
 - Unified data layer: `browse_data_sources`, `load_data_source`, `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`.
-- Treat source-specific CDAWeb/PDS/SPICE tools as compatibility or maintenance surfaces unless the user asks for low-level backend behavior.
+- Geometry/SPICE: `get_ephemeris`, `compute_distance`, `transform_coordinates`; confirm before `allow_kernel_download=True`.
+- Optional HAPI/FDSN: `browse_hapi_catalog`, `fetch_hapi_data`, `browse_fdsn_datasets`, `fetch_fdsn_data` may require server extras and should be used only when the science question calls for them.
 
 ## PySPEDAS package workflow
 
