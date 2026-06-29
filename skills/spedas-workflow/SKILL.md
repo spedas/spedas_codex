@@ -35,7 +35,7 @@ Think in four layers:
 - Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
 - Unified data layer: `browse_data_sources`, `load_data_source`, `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`.
 - Geometry/SPICE: `get_ephemeris`, `compute_distance`, `transform_coordinates`; confirm before `allow_kernel_download=True`.
-- Optional HAPI/FDSN: `browse_hapi_catalog`, `fetch_hapi_data`, `browse_fdsn_datasets`, `fetch_fdsn_data` may require server extras and should be used only when the science question calls for them.
+- Optional HAPI/FDSN: prefer `browse_data_sources(source_type='hapi'|'fdsn')` and follow its `next_tools`. The direct `browse_hapi_catalog`, `fetch_hapi_data`, `browse_fdsn_datasets`, and `fetch_fdsn_data` tools are demoted out of the default surface (Agent Kit #87/#145) and are advertised only when the server runs with `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` (and the relevant `[hapi]`/`[fdsn]` extras are installed). Use them only when the science question calls for them.
 
 ## PySPEDAS package workflow
 

@@ -27,7 +27,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
+- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` (current Agent Kit `main`) and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
@@ -46,8 +46,12 @@ python scripts/smoke_mcp_runtime.py --json
 `validate_plugin.py` is network-free and checks wrapper structure plus MCP
 reference and enforces the pinned `spedas_agent_kit` SHA plus bounded MCP dependency. `smoke_mcp_runtime.py` is a real stdio MCP runtime smoke: it starts
 the configured `spedas` server, performs `initialize` + `tools/list`, and verifies
-the current 17-tool base SPEDAS surface without private credentials, interactive UI, data fetches,
-or SPICE kernel downloads. It may need public network access the first time `uvx`
+the current 13-tool base SPEDAS surface without private credentials, interactive UI, data fetches,
+or SPICE kernel downloads. The direct HAPI/FDSN data-source tools are demoted out
+of this base surface (Agent Kit #87/#145) and only appear with
+`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`; the legacy CDAWeb/PDS compat tools require
+`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`. The smoke does not require either optional tier
+unless its flag is set. It may need public network access the first time `uvx`
 installs `spedas_agent_kit`.
 
 ## Real Codex CLI smoke
@@ -67,4 +71,4 @@ codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper
 
 Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools inside the agent session. In that case, `scripts/smoke_mcp_runtime.py --json` is the authoritative wrapper check: it starts the same `uvx ... spedas-agent-kit` command from `.mcp.json`, performs MCP initialize + tools/list, and verifies core SPEDAS tools.
 
-The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. This is important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves the pinned `spedas_agent_kit` commit from GitHub. Expected smoke evidence is `ok: true`, `tool_count: 17`, and an empty `missing_core_tools` list.
+The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. This is important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves the pinned `spedas_agent_kit` commit from GitHub. Expected default smoke evidence is `ok: true`, a `tool_count` of at least the 13 base tools (the analysis tier may add more if those extras are present), and an empty `missing_core_tools` list. Setting `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` or `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` additionally requires the corresponding optional tier.
