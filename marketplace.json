@@ -3,7 +3,7 @@
     {
       "name": "spedas-codex",
       "path": ".",
-      "description": "Codex wrapper for the official SPEDAS MCP."
+      "description": "Codex wrapper for the official SPEDAS Agent Kit MCP."
     }
   ]
 }

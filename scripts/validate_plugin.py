@@ -34,8 +34,8 @@ def validate_mcp():
     server = servers['spedas']
     args = server.get('args') or []
     joined = ' '.join(args)
-    if 'github.com/spedas/spedas_mcp' not in joined or 'spedas-mcp' not in joined:
-        raise SystemExit('spedas MCP server must install/run github.com/spedas/spedas_mcp spedas-mcp')
+    if 'github.com/spedas/spedas_agent_kit' not in joined or 'spedas-agent-kit' not in joined:
+        raise SystemExit('spedas MCP server must install/run github.com/spedas/spedas_agent_kit spedas-agent-kit')
     if server.get('command') != 'uvx':
         raise SystemExit('expected MCP command uvx for portable install')
     from_arg = ''
@@ -43,8 +43,8 @@ def validate_mcp():
         if arg == '--from' and i + 1 < len(args):
             from_arg = args[i + 1]
             break
-    if not re.search(r'git\+https://github\.com/spedas/spedas_mcp\.git@[0-9a-f]{40}($|[#\s])', from_arg):
-        raise SystemExit('spedas_mcp source must be pinned to a full commit SHA')
+    if not re.search(r'git\+https://github\.com/spedas/spedas_agent_kit\.git@[0-9a-f]{40}($|[#\s])', from_arg):
+        raise SystemExit('spedas_agent_kit source must be pinned to a full commit SHA')
     mcp_reqs = [arg.replace(' ', '') for arg in args if arg.replace(' ', '').startswith('mcp')]
     if not any(('<' in req or '==' in req or '~=' in req) for req in mcp_reqs):
         raise SystemExit('mcp dependency must include an upper bound')
