@@ -16,4 +16,6 @@ jobs:
       - name: Validate plugin wrapper
         run: python scripts/validate_plugin.py
       - name: Runtime smoke MCP server
-        run: python scripts/smoke_mcp_runtime.py --json
+        run: |
+          python scripts/smoke_mcp_runtime.py --json
+          python plugins/spedas-codex/scripts/smoke_mcp_runtime.py --json
