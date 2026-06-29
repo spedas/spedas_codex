@@ -3,9 +3,12 @@
 
 This is intentionally a no-credential, no-interactive-UI, no-data-fetch smoke.
 It reads the repo's .mcp.json, starts the configured ``spedas`` stdio MCP server,
-performs MCP ``initialize`` and ``tools/list`` JSON-RPC calls, verifies the core
-SPEDAS tool surface, then exits. Cache directories are isolated in a temporary
-folder unless the caller already set them.
+performs MCP ``initialize`` and ``tools/list`` JSON-RPC calls, verifies the
+default base SPEDAS tool surface, then exits. The optional direct HAPI/FDSN
+data-source tier and the legacy CDAWeb/PDS compat tier are only required when
+their respective ``SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`` /
+``SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`` flags are set. Cache directories are isolated
+in a temporary folder unless the caller already set them.
 """
 from __future__ import annotations
 
@@ -20,6 +23,12 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Base SPEDAS Agent Kit surface that the default (no-flag) runtime always
+# advertises. Keep in sync with spedas_agent_kit.server's _primary_tool set
+# (https://github.com/spedas/spedas_agent_kit). After Agent Kit #87/#145 the
+# direct HAPI/FDSN data-source tools are demoted out of this default surface and
+# are advertised only with SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1, so they are NOT
+# required here.
 EXPECTED_CORE_TOOLS = [
     "spedas_overview",
     "search_spedas_data_sources",
@@ -34,11 +43,37 @@ EXPECTED_CORE_TOOLS = [
     "get_ephemeris",
     "compute_distance",
     "transform_coordinates",
+]
+
+# Optional tiers gated by environment flags. These are only EXPECTED when the
+# corresponding flag is set in the process environment; otherwise they are
+# absent from the default surface by design and the smoke does not require them.
+DATASOURCE_TOOLS = [
     "browse_hapi_catalog",
     "fetch_hapi_data",
     "browse_fdsn_datasets",
     "fetch_fdsn_data",
 ]
+COMPAT_CDAWEB_PDS_TOOLS = [
+    "browse_observatories",
+    "load_observatory",
+    "browse_parameters",
+    "fetch_data",
+    "browse_pds_missions",
+    "load_pds_mission",
+    "browse_pds_parameters",
+    "fetch_pds_data",
+]
+
+
+def _expected_tools() -> list[str]:
+    """Base surface plus any optional tiers enabled via Agent Kit env flags."""
+    expected = list(EXPECTED_CORE_TOOLS)
+    if os.environ.get("SPEDAS_AGENT_KIT_DATASOURCE_TOOLS") == "1":
+        expected.extend(DATASOURCE_TOOLS)
+    if os.environ.get("SPEDAS_AGENT_KIT_COMPAT_TOOLS") == "1":
+        expected.extend(COMPAT_CDAWEB_PDS_TOOLS)
+    return expected
 
 
 def _load_server_config() -> dict[str, Any]:
@@ -202,15 +237,26 @@ def main() -> int:
         env = _server_env(server, Path(tmpdir))
         tools = asyncio.run(_smoke(command, command_args, env, args.timeout))
 
-    missing = [name for name in EXPECTED_CORE_TOOLS if name not in tools]
+    expected = _expected_tools()
+    missing = [name for name in expected if name not in tools]
     payload = {
         "ok": not missing,
         "tool_count": len(tools),
         "tools": tools,
-        "expected_core_tools": EXPECTED_CORE_TOOLS,
+        "expected_core_tools": expected,
         "missing_core_tools": missing,
+        "datasource_tools_enabled": os.environ.get("SPEDAS_AGENT_KIT_DATASOURCE_TOOLS") == "1",
+        "compat_tools_enabled": os.environ.get("SPEDAS_AGENT_KIT_COMPAT_TOOLS") == "1",
+        "datasource_env_flag": "SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1",
+        "compat_env_flag": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1",
         "command": [command, *command_args],
-        "note": "initialize + tools/list only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
+        "note": (
+            "initialize + tools/list only; no private credentials, interactive UI, "
+            "data fetch, or SPICE kernel download. Direct HAPI/FDSN tools require "
+            "SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1 and legacy CDAWeb/PDS compat tools "
+            "require SPEDAS_AGENT_KIT_COMPAT_TOOLS=1; both are absent from the "
+            "default base surface by design."
+        ),
     }
     if args.json:
         print(json.dumps(payload, indent=2))
