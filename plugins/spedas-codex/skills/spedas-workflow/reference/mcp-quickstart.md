@@ -27,11 +27,25 @@ codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper
 
 The runtime smoke is the authoritative wrapper/runtime check because it starts the
 same pinned `uvx ... spedas-agent-kit` command from `.mcp.json` and performs MCP
-initialize + tools/list. Expected current-base evidence: `ok: true`, a
-`tool_count` of at least the 13 base tools, and no missing core tools. The direct
-HAPI/FDSN tools are not in this default surface (Agent Kit #87/#145); set
+initialize + tools/list plus resources/list/read for packaged skills. Expected
+current-base evidence: `ok: true`, a `tool_count` of at least the 13 base tools,
+no missing core tools, and readable `spedas-skill://index` /
+`spedas-skill://skills/spedas-workflow` resources. The direct HAPI/FDSN tools are
+not in this default surface (Agent Kit #87/#145); set
 `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` to advertise them, and
 `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` for the legacy CDAWeb/PDS compat tools.
+
+## MCP skill resources
+
+The current Agent Kit pin exposes packaged workflow skills as read-only MCP
+resources while keeping `tools/list` compact:
+
+- `spedas-skill://index` — markdown index of bundled skills.
+- `spedas-skill://skills/spedas-workflow` — primary workflow skill body.
+
+Use `list_resources` to discover the full catalog and `read_resource` on a
+`spedas-skill://skills/<name>` URI when a Codex session needs deeper workflow
+guidance than the tool schemas alone provide.
 
 ## Publishing / installing for Codex
 

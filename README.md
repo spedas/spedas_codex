@@ -31,7 +31,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `79a4059bc6584e490aadceee327804793357c435` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
+- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
@@ -198,8 +198,9 @@ python plugins/spedas-codex/scripts/smoke_mcp_runtime.py --json
 pinned `spedas_agent_kit` SHA, bounded MCP dependency, and the Codex Desktop
 MCP-tool-exposure troubleshooting snippets. `smoke_mcp_runtime.py` is a real stdio
 MCP runtime smoke: it starts the configured `spedas` server, performs `initialize`
-+ `tools/list`, and verifies the current 13-tool base SPEDAS surface without
-private credentials, interactive UI, data fetches, or SPICE kernel downloads. The
++ `tools/list` plus `resources/list` / `resources/read`, and verifies the current
+13-tool base SPEDAS surface and packaged skill resources without private
+credentials, interactive UI, data fetches, or SPICE kernel downloads. The
 direct HAPI/FDSN data-source tools are demoted out of this base surface (Agent Kit
 #87/#145) and only appear with `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`; the legacy
 CDAWeb/PDS compat tools require `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`. The smoke does
@@ -227,8 +228,9 @@ For Codex Desktop, separate two checks:
 
 1. **Wrapper runtime health**: `python scripts/smoke_mcp_runtime.py --json` starts
 the same `uvx ... spedas-agent-kit` command from `.mcp.json`, performs MCP
-`initialize` + `tools/list`, and verifies core SPEDAS tools. This confirms the
-plugin package can start the MCP server.
+`initialize` + `tools/list` plus `resources/list` / `resources/read`, and verifies
+core SPEDAS tools plus packaged skill resources. This confirms the plugin package
+can start the MCP server.
 2. **Active-session tool exposure**: after enabling the plugin MCP server, restart
 Codex Desktop and start a new thread. The new thread should have callable tools
 named like `mcp__spedas__spedas_overview`, `mcp__spedas__browse_data_sources`,
@@ -243,7 +245,14 @@ The runtime smoke isolates SPEDAS data caches and falls back to temporary
 important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves
 the pinned `spedas_agent_kit` commit from GitHub. Expected default smoke evidence
 is `ok: true`, a `tool_count` of at least the 13 base tools (the analysis tier may
-add more if those extras are present), and an empty `missing_core_tools` list.
+add more if those extras are present), `resource_count: 23`, an empty
+`missing_core_tools` list, an empty `missing_skill_resources` list, and readable
+`spedas-skill://index` / `spedas-skill://skills/spedas-workflow` resources.
 Setting `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` or
 `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` additionally requires the corresponding optional
 tier.
+
+If your Codex/MCP client exposes resources, use `list_resources` and read
+`spedas-skill://index` or `spedas-skill://skills/spedas-workflow` for the
+Agent Kit packaged skill catalog. These resources are read-only guidance and do
+not add to the compact 13-tool default surface.
