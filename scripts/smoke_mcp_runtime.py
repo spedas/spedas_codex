@@ -45,6 +45,11 @@ EXPECTED_CORE_TOOLS = [
     "transform_coordinates",
 ]
 
+EXPECTED_SKILL_RESOURCES = [
+    "spedas-skill://index",
+    "spedas-skill://skills/spedas-workflow",
+]
+
 # Optional tiers gated by environment flags. These are only EXPECTED when the
 # corresponding flag is set in the process environment; otherwise they are
 # absent from the default surface by design and the smoke does not require them.
@@ -191,7 +196,18 @@ async def _request(
             return message.get("result") or {}
 
 
-async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: float) -> list[str]:
+def _read_resource_text(result: dict[str, Any]) -> str:
+    contents = result.get("contents") or []
+    if not isinstance(contents, list):
+        return ""
+    chunks: list[str] = []
+    for item in contents:
+        if isinstance(item, dict) and isinstance(item.get("text"), str):
+            chunks.append(item["text"])
+    return "\n".join(chunks)
+
+
+async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: float) -> dict[str, Any]:
     proc = await asyncio.create_subprocess_exec(
         command,
         *args,
@@ -211,7 +227,22 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
         await _send_message(proc.stdin, {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
         result = await asyncio.wait_for(_request(proc.stdout, proc.stdin, 2, "tools/list"), timeout)
         tools = result.get("tools") or []
-        return [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)]
+        resources_result = await asyncio.wait_for(_request(proc.stdout, proc.stdin, 3, "resources/list"), timeout)
+        resources = resources_result.get("resources") or []
+        skill_index = await asyncio.wait_for(
+            _request(proc.stdout, proc.stdin, 4, "resources/read", {"uri": "spedas-skill://index"}),
+            timeout,
+        )
+        workflow_skill = await asyncio.wait_for(
+            _request(proc.stdout, proc.stdin, 5, "resources/read", {"uri": "spedas-skill://skills/spedas-workflow"}),
+            timeout,
+        )
+        return {
+            "tools": [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)],
+            "resources": [resource.get("uri") for resource in resources if isinstance(resource, dict) and isinstance(resource.get("uri"), str)],
+            "skill_index_readable": "spedas-skill://skills/" in _read_resource_text(skill_index),
+            "workflow_skill_readable": "SPEDAS" in _read_resource_text(workflow_skill),
+        }
     finally:
         if proc.returncode is None:
             proc.terminate()
@@ -235,14 +266,28 @@ def main() -> int:
     command, command_args = _server_command(server)
     with tempfile.TemporaryDirectory(prefix="spedas-plugin-smoke-") as tmpdir:
         env = _server_env(server, Path(tmpdir))
-        tools = asyncio.run(_smoke(command, command_args, env, args.timeout))
+        smoke = asyncio.run(_smoke(command, command_args, env, args.timeout))
+        tools = smoke["tools"]
+        resources = smoke["resources"]
 
     expected = _expected_tools()
     missing = [name for name in expected if name not in tools]
+    missing_skill_resources = [uri for uri in EXPECTED_SKILL_RESOURCES if uri not in resources]
+    skill_resources_ok = (
+        not missing_skill_resources
+        and smoke["skill_index_readable"]
+        and smoke["workflow_skill_readable"]
+    )
     payload = {
-        "ok": not missing,
+        "ok": not missing and skill_resources_ok,
         "tool_count": len(tools),
         "tools": tools,
+        "resource_count": len(resources),
+        "resources": resources,
+        "expected_skill_resources": EXPECTED_SKILL_RESOURCES,
+        "missing_skill_resources": missing_skill_resources,
+        "skill_index_readable": smoke["skill_index_readable"],
+        "workflow_skill_readable": smoke["workflow_skill_readable"],
         "expected_core_tools": expected,
         "missing_core_tools": missing,
         "datasource_tools_enabled": os.environ.get("SPEDAS_AGENT_KIT_DATASOURCE_TOOLS") == "1",
@@ -251,8 +296,8 @@ def main() -> int:
         "compat_env_flag": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1",
         "command": [command, *command_args],
         "note": (
-            "initialize + tools/list only; no private credentials, interactive UI, "
-            "data fetch, or SPICE kernel download. Direct HAPI/FDSN tools require "
+            "initialize + tools/list + resources/list/read for packaged skills only; "
+            "no private credentials, interactive UI, data fetch, or SPICE kernel download. Direct HAPI/FDSN tools require "
             "SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1 and legacy CDAWeb/PDS compat tools "
             "require SPEDAS_AGENT_KIT_COMPAT_TOOLS=1; both are absent from the "
             "default base surface by design."
@@ -263,8 +308,15 @@ def main() -> int:
     else:
         print(f"SPEDAS plugin MCP runtime smoke: {'OK' if payload['ok'] else 'FAIL'}")
         print(f"tool_count: {payload['tool_count']}")
+        print(f"resource_count: {payload['resource_count']}")
         if missing:
             print("missing core tools: " + ", ".join(missing), file=sys.stderr)
+        if missing_skill_resources:
+            print("missing skill resources: " + ", ".join(missing_skill_resources), file=sys.stderr)
+        if not smoke["skill_index_readable"]:
+            print("skill index resource was not readable", file=sys.stderr)
+        if not smoke["workflow_skill_readable"]:
+            print("spedas-workflow skill resource was not readable", file=sys.stderr)
     return 0 if payload["ok"] else 1
 
 
