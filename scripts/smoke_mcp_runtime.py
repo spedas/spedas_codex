@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runtime smoke-test the packaged SPEDAS MCP server configuration.
+"""Runtime smoke-test the packaged SPEDAS Agent Kit MCP server configuration.
 
 This is intentionally a no-credential, no-interactive-UI, no-data-fetch smoke.
 It reads the repo's .mcp.json, starts the configured ``spedas`` stdio MCP server,

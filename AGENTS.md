@@ -1,7 +1,7 @@
 # SPEDAS Codex operating instructions
 
-Use this repository as a thin Codex wrapper around the official `spedas_mcp` MCP.
-Do not reimplement CDAWeb/PDS/SPICE logic here.
+Use this repository as a thin Codex wrapper around the official `spedas_agent_kit` core.
+Do not reimplement MCP server behavior, shared SPEDAS skills, or CDAWeb/PDS/SPICE logic here.
 
 When a user asks for SPEDAS work:
 
