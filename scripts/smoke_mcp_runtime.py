@@ -22,17 +22,23 @@ ROOT = Path(__file__).resolve().parents[1]
 
 EXPECTED_CORE_TOOLS = [
     "spedas_overview",
+    "search_spedas_data_sources",
+    "plan_spedas_observation",
+    "compare_cdaweb_pds_spice",
+    "create_spedas_analysis_bundle",
     "browse_data_sources",
     "load_data_source",
     "browse_data_parameters",
     "fetch_data_product",
     "manage_data_cache",
-    "search_spedas_data_sources",
-    "plan_spedas_observation",
-    "compare_cdaweb_pds_spice",
-    "create_spedas_analysis_bundle",
+    "get_ephemeris",
+    "compute_distance",
+    "transform_coordinates",
+    "browse_hapi_catalog",
+    "fetch_hapi_data",
+    "browse_fdsn_datasets",
+    "fetch_fdsn_data",
 ]
-
 
 
 def _load_server_config() -> dict[str, Any]:
