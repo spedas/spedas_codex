@@ -6,7 +6,7 @@
         "--with",
         "mcp>=1.26.0,<2",
         "--from",
-        "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
+        "git+https://github.com/spedas/spedas_agent_kit.git@79a4059bc6584e490aadceee327804793357c435",
         "spedas-agent-kit"
       ],
       "env": {
