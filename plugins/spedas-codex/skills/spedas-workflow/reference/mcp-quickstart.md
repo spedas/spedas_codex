@@ -47,6 +47,22 @@ Use `list_resources` to discover the full catalog and `read_resource` on a
 `spedas-skill://skills/<name>` URI when a Codex session needs deeper workflow
 guidance than the tool schemas alone provide.
 
+## Event preset and provenance resources
+
+Recent Agent Kit pins also expose paper/event reproduction scaffolding as MCP
+resources without expanding `tools/list`:
+
+- `spedas-preset://index` — event/paper preset catalog; read it before
+  hand-authoring time ranges for known solar-wind or magnetospheric events.
+- `spedas-preset://events/<id>` — one preset record with interval, labels,
+  recommended skills, and caveats.
+- `spedas-preset://schemas/reproduction_provenance` — canonical JSON schema for
+  run provenance emitted by paper/event reproduction workflows.
+
+If a Codex runtime exposes tools but not resources interactively, keep the run
+artifact-first and state that the preset/schema resource could not be read rather
+than fabricating provenance fields from memory.
+
 ## Publishing / installing for Codex
 
 Use the same marketplace package shape as this repo:
