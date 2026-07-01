@@ -31,7 +31,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `fb5d4005fc5870ac4b8a94c1221efca4703b1c3a` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
+- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `8e3789539feb0ce79fe112be17465b40f363696d` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
@@ -245,7 +245,7 @@ The runtime smoke isolates SPEDAS data caches and falls back to temporary
 important in Codex sandboxes and CI. First runs may be slow because `uvx` resolves
 the pinned `spedas_agent_kit` commit from GitHub. Expected default smoke evidence
 is `ok: true`, a `tool_count` of at least the 13 base tools (optional tiers may
-add more), a `resource_count` of at least 61, empty `missing_core_tools`,
+add more), a `resource_count` of at least 64, empty `missing_core_tools`,
 `missing_skill_resources`, and `missing_preset_resources` lists, and readable
 `spedas-skill://index`, `spedas-skill://skills/spedas-workflow`,
 `spedas-preset://schemas/reproduction_provenance`, and
