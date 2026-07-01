@@ -12,7 +12,7 @@ without owning or duplicating the Agent Kit science logic/skills.
   - `.codex-plugin/plugin.json` — plugin metadata for Codex-style plugin loaders.
   - `.mcp.json` — starts the `spedas-agent-kit` MCP server from `spedas/spedas_agent_kit` via `uvx`.
   - `AGENTS.md` — operating instructions for Codex.
-  - `skills/spedas-workflow/SKILL.md` — portable SPEDAS workflow guidance.
+  - `skills/*/SKILL.md` — portable SPEDAS workflow guidance.
   - `examples/prompts.md` — suggested prompts and expected tool flow.
   - `scripts/smoke_mcp_runtime.py` — package-local MCP runtime smoke.
 - Root-level `.codex-plugin/`, `.mcp.json`, `AGENTS.md`, `skills/`, and `examples/` are retained as direct-checkout compatibility mirrors of the package files. `scripts/validate_plugin.py` enforces that these mirrors stay in sync.
@@ -31,7 +31,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
+- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `161aecc087e7bf1ecdd4879b3cacd44d0980e50e` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
@@ -256,3 +256,22 @@ If your Codex/MCP client exposes resources, use `list_resources` and read
 `spedas-skill://index` or `spedas-skill://skills/spedas-workflow` for the
 Agent Kit packaged skill catalog. These resources are read-only guidance and do
 not add to the compact 13-tool default surface.
+
+### Shared skill set
+
+This wrapper now carries the full shared SPEDAS skill set exported from the
+canonical Agent Kit package resources. Refresh both root and packaged plugin
+copies from Agent Kit with:
+
+```bash
+python /path/to/spedas_agent_kit/scripts/export_packaged_skills.py \
+  --source /path/to/spedas_agent_kit/src/spedas_agent_kit/resources/skills \
+  --target skills --clean
+python /path/to/spedas_agent_kit/scripts/export_packaged_skills.py \
+  --source /path/to/spedas_agent_kit/src/spedas_agent_kit/resources/skills \
+  --target plugins/spedas-codex/skills --clean
+```
+
+`spedas_agent_kit` remains the source of truth for MCP tools/resources and
+shared skills. This repository should only hold Codex packaging, plugin metadata,
+MCP config, validation/smoke scripts, and synchronized skill copies.

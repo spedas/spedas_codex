@@ -1,73 +1,83 @@
 ---
 name: spedas-workflow
-description: Use when working with SPEDAS, PySPEDAS, or the SPEDAS Agent Kit MCP plugin to discover heliophysics data sources, choose missions/parameters/time ranges, plan science workflows, run safe metadata-first checks, fetch/export artifacts only when appropriate, and preserve provenance.
+description: Use the spedas-agent-kit MCP server through the unified SPEDAS data layer and science workflow layer.
 ---
 
-# SPEDAS / PySPEDAS workflow skill
+# SPEDAS Agent Kit workflow
 
-Use this skill when the user asks a heliophysics data question, wants to use SPEDAS/PySPEDAS, or wants an agent runtime to call the SPEDAS Agent Kit MCP plugin.
+The plugin exposes one MCP server named `spedas`. Start with `spedas_overview()` when uncertain.
 
-## Operating model
+Prefer the public SPEDAS mental model:
 
-Think in four layers:
+1. science workflow layer;
+2. unified data layer;
+3. data source categories: `cdaweb`, `pds`, `spice`;
+4. internal backend packages only when maintaining/debugging the MCP.
 
-1. **Science question** — event, mission, interval, coordinate system, expected signal, and success criteria.
-2. **Workflow layer** — SPEDAS Agent Kit MCP planning/comparison/bundle tools or PySPEDAS recipes.
-3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model. SPICE geometry uses `get_ephemeris`, `compute_distance`, and `transform_coordinates`, not `fetch_data_product`.
-4. **Artifacts and provenance** — outputs are paths, manifests, hashes, plots, tables, and notes; avoid dumping large arrays/CDF/tplot objects into chat.
+## Preferred tools
 
-## Default workflow
+- `search_spedas_data_sources`
+- `plan_spedas_observation`
+- `compare_cdaweb_pds_spice`
+- `create_spedas_analysis_bundle`
+- `browse_data_sources(source_type="all"|"cdaweb"|"pds"|"spice")`
+- `load_data_source(source_type, source_id)`
+- `browse_data_parameters(source_type, dataset_id, ...)`
+- `fetch_data_product(source_type, ...)`
+- `manage_data_cache(source_type, ...)`
 
-1. Restate the science target: mission(s), time window, parameters, geometry/coordinate needs, and whether real data fetch is allowed.
-2. Start metadata-first:
-   - MCP: call `spedas_overview`, then `search_spedas_data_sources` or `browse_data_sources`.
-   - PySPEDAS: identify the relevant mission loader and variables before loading data.
-3. Plan before fetch:
-   - MCP: use `plan_spedas_observation` and, when multiple archives are relevant, `compare_cdaweb_pds_spice`.
-   - PySPEDAS: decide `trange`, `probe`, `datatype`, `level`, variable names, and cache directory.
-4. Fetch only when the user/task calls for it. Keep windows narrow, make caches explicit, and expect public archive rate limits.
-5. Save artifacts with provenance: request, tool call/source, versions, cache/output roots, SHA-256 where useful, variable/source mapping, and caveats.
-6. Report results conclusion-first, with paths and exact next actions.
+Compatibility low-level tools remain available for maintenance/debugging, but new agent workflows should start with the unified data-layer tools.
 
-## Preferred SPEDAS Agent Kit MCP tools
 
-- Discovery and mental model: `spedas_overview`.
-- Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
-- Unified data layer: `browse_data_sources`, `load_data_source`, `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`.
-- Geometry/SPICE: `get_ephemeris`, `compute_distance`, `transform_coordinates`; confirm before `allow_kernel_download=True`.
-- Optional HAPI/FDSN: prefer `browse_data_sources(source_type='hapi'|'fdsn')` and follow its `next_tools`. The direct `browse_hapi_catalog`, `fetch_hapi_data`, `browse_fdsn_datasets`, and `fetch_fdsn_data` tools are demoted out of the default surface (Agent Kit #87/#145) and are advertised only when the server runs with `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` (and the relevant `[hapi]`/`[fdsn]` extras are installed). Use them only when the science question calls for them.
+## MMS reconnection events (Batch 006 guardrail)
 
-## PySPEDAS package workflow
+For MMS reconnection/EDR papers, keep the first pass narrow and explicit: plan
+with `spedas_overview` / `plan_spedas_observation`, fetch burst FGM/FPI/EDP
+artifacts, then chain into existing analysis helpers before asking for new code.
+Use `analyze_minvar_coordinates` plus `transform_timeseries_coordinates` for LMN
+or field-aligned panels, and use `*-DIST` artifacts with
+`compute_particle_spectra(..., spectrum_types=["energy", "pitch_angle"])` for
+PAD/energy claims. A single-spacecraft `e*n_e*(V_i-V_e)` current or `J·E'` is a
+transparent proxy, not a curlometer or paper-quality heating result; mark it
+`proxy` unless the interval, LMN/FAC basis, calibrated E-field, and MMS1-4
+curlometer diagnostics are all verified. If the paper/supplement interval cannot
+be verified, record `candidate_interval` or `availability_failure` instead of
+widening the fetch or claiming reproduction.
 
-Use PySPEDAS directly when the user needs Python/tplot workflows, plotting, existing mission routines, or compatibility with SPEDAS notebooks/scripts.
+## Heliospheric ICME/SEP multi-spacecraft events (Batch 007 guardrail)
 
-Minimum safe pattern:
+For Wind/ACE/STEREO/OMNI ICME, magnetic-cloud, CME-CME, or SEP papers, use
+`paper-reproduction` as the outer artifact contract and treat
+`docs/examples/stereo_icme_multispacecraft.md` as the reduced first-pass recipe.
+Start with STEREO MAG `1min` + PLASTIC proton moments for multi-day events, add
+Wind/ACE/OMNI only with explicit source/propagation labels, and keep SEP products
+as `reduced_sep_proxy` until telescope/species/energy-channel metadata are
+verified. Batch 007 confirmed that STEREO/PLASTIC/SEPT routing already exists;
+the repeated gap is discoverability, event seeds, variable-alias provenance, and
+overclaim prevention. Do not promote shock/sheath/cloud boundaries,
+SEP onset/fluence, or SECCHI/HI J-map context to paper-quality outputs unless
+those products and methods are explicitly loaded and documented.
 
-```python
-import pyspedas
-from pytplot import get_data, tplot_names
+## Magnetotail / multi-spacecraft boundary events (Batch 008 guardrail)
 
-trange = ["2015-10-16/13:06", "2015-10-16/13:08"]
-pyspedas.mms.fgm(trange=trange, probe="1", data_rate="srvy", level="l2", time_clip=True)
-print(tplot_names())
-```
+For Cluster, Geotail, or THEMIS magnetotail/boundary papers, use
+`paper-reproduction` as the artifact contract and
+`docs/examples/cluster_geotail_themis_magnetotail_multispacecraft.md` as the
+first-pass recipe. Discover sources with `search_spedas_data_sources`, plan the
+field/plasma/state products with `plan_spedas_observation`, and create a bundle
+before plotting. Batch 008 showed that Cluster C1 CIS can load while the tested
+Cluster FGM UP route returns no files; label those overviews
+`single_spacecraft_cis` and `fgm_route_empty` instead of implying
+four-spacecraft science. Keep the Geotail Nagai 2013 route scout labelled
+`not_paper_exact` / `metadata_unresolved` until the actual event list and
+methods are verified. Do not claim curlometer current density, gradients,
+timing normals, KH-vortex morphology, shock normals, FTEs, or reconnection rates
+without four-spacecraft magnetic fields, positions, cadence/frame checks, and
+paper-interval provenance.
 
-Before expanding the interval, confirm variable names, data cadence, download/cache behavior, and whether the public archive is rate-limiting.
+## Guardrails
 
-## Failure classification
-
-When something fails, label it precisely:
-
-- **MCP wrapper issue** — plugin config, server startup, schema, runtime smoke, CLI integration.
-- **SPEDAS Agent Kit MCP issue** — unified tool behavior, planning semantics, parameter mapping, error shape.
-- **Backend/data gap** — missing CDAWeb variable, incomplete PDS label/metadata, unavailable SPICE kernel.
-- **External service limit** — network, archive outage, timeout, HTTP 429, cold cache.
-- **Docs/skills gap** — the tool works but first-user instructions or scientific method are unclear.
-
-## References in this skill folder
-
-- `reference/mcp-quickstart.md` — Claude/Codex plugin smoke and first user checks.
-- `reference/source-selection.md` — choose CDAWeb vs PDS vs SPICE.
-- `reference/pyspedas-patterns.md` — safe PySPEDAS loading/plotting/export patterns.
-- `reference/artifact-provenance.md` — what to save for reproducible science.
-- `reference/science-examples.md` — starter prompts for MMS, Juno, PSP, THEMIS, and upstream solar wind.
+- Do not fetch large intervals until source_type, dataset_id, parameters, time range, output_dir, and provenance plan are clear.
+- Prefer artifact paths, hashes, compact summaries, and provenance over pasted raw arrays/CDF contents.
+- For PDS fetches, narrow by time and parameters; `limit` is not a PDS backend control.
+- For SPICE geometry, use geometry tools after discovery; do not expect measurement parameters.

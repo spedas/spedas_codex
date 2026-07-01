@@ -19,7 +19,8 @@ MIRRORED_PACKAGE_FILES = [
     "scripts/smoke_mcp_runtime.py",
 ]
 MIRRORED_PACKAGE_GLOBS = [
-    "skills/spedas-workflow/reference/*.md",
+    "skills/*/SKILL.md",
+    "skills/*/reference/*.md",
 ]
 
 DOC_REQUIRED_SNIPPETS = {
@@ -34,16 +35,6 @@ DOC_REQUIRED_SNIPPETS = {
         "mcp__spedas__browse_data_sources",
         "mcp__spedas__fetch_data_product",
         "Plugins -> Created by you -> Share",
-    ],
-    "skills/spedas-workflow/reference/mcp-quickstart.md": [
-        "## Publishing / installing for Codex",
-        "codex plugin marketplace add owner/repo",
-        "codex plugin add spedas-codex@<marketplace-name>",
-        '[plugins."spedas-codex@spedas".mcp_servers.spedas]',
-        'default_tools_approval_mode = "prompt"',
-        "mcp__spedas__spedas_overview",
-        "mcp__spedas__browse_data_sources",
-        "mcp__spedas__fetch_data_product",
     ],
 }
 
