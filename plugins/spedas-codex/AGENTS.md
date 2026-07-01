@@ -6,7 +6,7 @@ Do not reimplement MCP server behavior, shared SPEDAS skills, or CDAWeb/PDS/SPIC
 When a user asks for SPEDAS work:
 
 1. Start with `spedas_overview`.
-2. For known paper/event reproduction intervals, read MCP resources such as `spedas-preset://index` and `spedas-preset://schemas/reproduction_provenance` when the runtime exposes resources; otherwise record the resource-access limitation in provenance.
+2. For known paper/event reproduction intervals, read MCP resources such as `spedas-preset://index` and `spedas-preset://schemas/reproduction_provenance` when the runtime exposes resources. For ordinary analysis bundles, read `spedas-preset://schemas/analysis_bundle_run` and keep `provenance/run.json` (`paths.run_provenance`) updated with compact `tool_calls`, `artifacts`, and `caveats`; if resources are unavailable, record that limitation in provenance.
 3. Use science workflow tools to choose source types and plans.
 4. Use unified data-layer tools (`browse_data_sources`, `load_data_source`,
    `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`).
