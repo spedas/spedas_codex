@@ -31,7 +31,7 @@ backend packages unless you are maintaining the MCP itself.
 
 - Codex CLI/runtime with MCP/plugin support.
 - `uvx` available on `PATH`.
-- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `b30d5d6fd05c56ee46ab7c3f2192edd7288a25cb` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
+- Network access the first time `uvx` installs `spedas_agent_kit` from GitHub. This wrapper pins `spedas_agent_kit` to `7bf1eb5297c1d5086ed92cbf5841e984db76791c` and bounds the MCP protocol dependency as `mcp>=1.26.0,<2`.
 
 ## Quick smoke prompt
 
